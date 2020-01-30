@@ -3,7 +3,7 @@
 
     <groupId>com.ruleoftech</groupId>
     <artifactId>markdown-page-generator-plugin</artifactId>
-    <version>2.1.1-SNAPSHOT</version>
+    <version>2.1.1-alfresco</version>
     <packaging>maven-plugin</packaging>
     <name>Markdown Page Generator Maven Plugin</name>
     <description>Markdown to HTML Page Generator Maven Plugin</description>
@@ -98,14 +98,16 @@
     </dependencies>
 
     <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
+		<repository>
+			<id>alfresco-training</id>
+			<name>Alfresco Training Releases</name>
+			<url>https://artifacts.alfresco.com/nexus/content/repositories/training-release</url>
+		</repository>
+		<snapshotRepository>
+			<id>alfresco-training-snapshots</id>
+			<name>Alfresco Training Snapshots</name>
+			<url>https://artifacts.alfresco.com/nexus/content/repositories/training-snapshots</url>
+		</snapshotRepository>
     </distributionManagement>
 
     <build>
