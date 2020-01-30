@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -120,6 +122,9 @@ public class MdPageGeneratorMojo extends AbstractMojo {
     @Parameter(property = "generate.pegdownExtensions", defaultValue = "TABLES")
     private String pegdownExtensions;
 
+    @Parameter(property = "generate.flexmarkExtensions")
+    private String flexmarkExtensions;
+    
     @Parameter(property = "generate.flexmarkParserOptions")
     private String flexmarkParserOptions;
 
@@ -181,6 +186,7 @@ public class MdPageGeneratorMojo extends AbstractMojo {
             getLog().info("Process Pegdown extension options");
             int pegdownOptions = getPegdownExtensions(pegdownExtensions);
             MutableDataHolder flexmarkOptions = getFlexmarkParserOptions(flexmarkParserOptions);
+            Parser.addExtensions(flexmarkOptions, this.getFlexmarkExtensions(flexmarkExtensions));
             final Map<String, Attributes> attributesMap = processAttributes(attributes);
 
             getLog().info("Parse Markdown to HTML");
@@ -325,6 +331,32 @@ public class MdPageGeneratorMojo extends AbstractMojo {
 
         return optionsAsDataKeys;
     }
+    
+    private Extension[] getFlexmarkExtensions(String extensionClassNames) throws MojoExecutionException {
+    	List<Extension> extensions = new LinkedList<Extension>();
+    	
+    	if (extensionClassNames == null || extensionClassNames.isEmpty())
+    		return extensions.toArray(new Extension[extensions.size()]);
+    	
+    	for (String extensionClassName : extensionClassNames.split("\\s*,\\s*")) {
+    		try {
+				Class<?> extensionClass = Class.forName(extensionClassName);
+	    		Method createMethod = extensionClass.getMethod("create");
+	    		Extension extension = (Extension)createMethod.invoke(null);
+	    		extensions.add(extension);
+    		} catch (ClassNotFoundException cnfe) {
+    			throw new MojoExecutionException("The extension, '" + extensionClassName + "', could not be found", cnfe);
+    		} catch (NoSuchMethodException nsme) {
+    			throw new MojoExecutionException("The extension, '" + extensionClassName + "', must have a `static create()` method", nsme);
+    		} catch (IllegalAccessException iae) {
+    			throw new MojoExecutionException("The '" + extensionClassName + ".create()` method must be public", iae);
+    		} catch (InvocationTargetException ite) {
+    			throw new MojoExecutionException("The '" + extensionClassName + ".create()' method failed", ite);
+    		}
+    	}
+    	
+    	return extensions.toArray(new Extension[extensions.size()]);
+    }
 
     /**
      * Read Markdown files from directory.
@@ -449,9 +481,9 @@ public class MdPageGeneratorMojo extends AbstractMojo {
 
         finalFlexmarkOptions.set(Parser.EXTENSIONS, extensions);
         
-        getLog().info("final flexmark options: ");
+        getLog().debug("final flexmark options: ");
         for (DataKey<?> opt : finalFlexmarkOptions.keySet())
-        	getLog().info("  " + opt.getName());
+        	getLog().debug("  " + opt.getName());
 
         Parser parser = Parser.builder(finalFlexmarkOptions).build();
         HtmlRenderer renderer = HtmlRenderer.builder(finalFlexmarkOptions).build();
